@@ -104,25 +104,50 @@ fun DetectScreen(onOpenFaceListClick: (() -> Unit)) {
 
 @Composable
 private fun ScreenUI() {
+    // Get your ViewModel
     val viewModel: DetectScreenViewModel = koinViewModel()
+
     Box {
+        // Show camera preview
         Camera(viewModel)
+
+        // Show recognized faces & metrics if there's at least 1 face in DB
         DelayedVisibility(viewModel.getNumPeople() > 0) {
-            val metrics by remember{ viewModel.faceDetectionMetricsState }
-            Column {
+
+            // 1) Read the metrics state
+            val metrics by remember { viewModel.faceDetectionMetricsState }
+
+            // 2) Read the face recognition results state (the one with match confidence)
+            //    Make sure you have faceRecognitionResultState in your ViewModel
+            val results by remember { viewModel.faceRecognitionResultState }
+
+            Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = "Recognition on ${viewModel.getNumPeople()} face(s)",
                     color = Color.White,
-                    modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
                 )
+
+                // NEW: Display the match confidence for each recognized face
+                results?.forEach { result ->
+                    Text(
+                        text = "Matched: ${result.personName}\n" +
+                                "Confidence: ${result.confidence ?: 0}%\n" +
+                                "Spoof Score: ${result.spoofResult?.score ?: "N/A"}",
+                        color = Color.White,
+                        textAlign = TextAlign.Center
+                    )
+                }
+
                 Spacer(modifier = Modifier.weight(1f))
+
+                // Show metrics if not null
                 metrics?.let {
                     Text(
                         text = "face detection: ${it.timeFaceDetection} ms" +
                                 "\nface embedding: ${it.timeFaceEmbedding} ms" +
-                                "\nvector search: ${it.timeVectorSearch} ms\n" +
-                                "spoof detection: ${it.timeFaceSpoofDetection} ms",
+                                "\nvector search: ${it.timeVectorSearch} ms" +
+                                "\nspoof detection: ${it.timeFaceSpoofDetection} ms",
                         color = Color.White,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -132,12 +157,13 @@ private fun ScreenUI() {
                 }
             }
         }
+
+        // If no faces in DB, show this text
         DelayedVisibility(viewModel.getNumPeople() == 0L) {
             Text(
                 text = "No images in database",
                 color = Color.White,
-                modifier =
-                Modifier
+                modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .background(Color.Blue, RoundedCornerShape(16.dp))
@@ -145,6 +171,8 @@ private fun ScreenUI() {
                 textAlign = TextAlign.Center
             )
         }
+
+        // Any alert dialogs
         AppAlertDialog()
     }
 }
