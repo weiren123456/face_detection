@@ -167,19 +167,28 @@ class FaceDetectionOverlay(
             CoroutineScope(Dispatchers.Default).launch {
                 val predictions = ArrayList<Prediction>()
                 val (metrics, results) = viewModel.imageVectorUseCase.getNearestPersonName(frameBitmap)
-                results.forEach {
-                    (name, boundingBox, spoofResult) ->
-                    val box = boundingBox.toRectF()
-                    var personName = name
+                results.forEach { result ->
+                    val box = result.boundingBox.toRectF()
+                    var label = result.personName
+
                     if (viewModel.getNumPeople().toInt() == 0) {
-                        personName = ""
+                        label = ""
                     }
-                    if (spoofResult != null && spoofResult.isSpoof) {
-                        personName = "$personName (Spoof: ${spoofResult.score})"
+
+                    // Add spoof score if it's a spoof
+                    if (result.spoofResult != null && result.spoofResult.isSpoof) {
+                        label += " (Spoof: ${result.spoofResult.score})"
                     }
+
+                    // ✅ Add confidence if available
+                    result.confidence?.let {
+                        label += "\nConfidence: $it%"
+                    }
+
                     boundingBoxTransform.mapRect(box)
-                    predictions.add(Prediction(box, personName))
+                    predictions.add(Prediction(box, label))
                 }
+
                 withContext(Dispatchers.Main) {
                     viewModel.faceDetectionMetricsState.value = metrics
                     this@FaceDetectionOverlay.predictions = predictions.toTypedArray()

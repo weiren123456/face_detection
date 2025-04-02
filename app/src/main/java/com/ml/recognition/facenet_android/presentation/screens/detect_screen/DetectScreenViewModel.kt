@@ -6,6 +6,10 @@ import com.ml.shubham0204.facenet_android.data.RecognitionMetrics
 import com.ml.shubham0204.facenet_android.domain.ImageVectorUseCase
 import com.ml.shubham0204.facenet_android.domain.PersonUseCase
 import org.koin.android.annotation.KoinViewModel
+import android.graphics.Bitmap
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 // Define the data class for each recognition result.
 import com.ml.shubham0204.facenet_android.domain.ImageVectorUseCase.FaceRecognitionResult
@@ -25,6 +29,14 @@ class DetectScreenViewModel(
     // NEW: Function to update the recognition results.
     fun updateRecognitionResults(results: List<FaceRecognitionResult>) {
         faceRecognitionResultState.value = results
+    }
+    fun recognizeFaceFromBitmap(bitmap: Bitmap) {
+        viewModelScope.launch(Dispatchers.Default) {
+            val (metrics, recognitionResults) = imageVectorUseCase.getNearestPersonName(bitmap)
+
+            faceDetectionMetricsState.value = metrics
+            faceRecognitionResultState.value = recognitionResults
+        }
     }
 
     fun getNumPeople(): Long = personUseCase.getCount()
