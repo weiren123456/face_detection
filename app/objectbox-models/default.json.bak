@@ -64,9 +64,43 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "3:6035768619065529582",
+      "lastPropertyId": "5:3834812902553928791",
+      "name": "AttendanceRecord",
+      "properties": [
+        {
+          "id": "1:221478715646025009",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:8062659364319895633",
+          "name": "studentId",
+          "type": 6
+        },
+        {
+          "id": "3:6671468510329838953",
+          "name": "session",
+          "type": 9
+        },
+        {
+          "id": "4:7092551041981301559",
+          "name": "date",
+          "type": 9
+        },
+        {
+          "id": "5:3834812902553928791",
+          "name": "timestamp",
+          "type": 6
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "2:5724033975412775664",
+  "lastEntityId": "3:6035768619065529582",
   "lastIndexId": "2:1210613089703466990",
   "lastRelationId": "0:0",
   "lastSequenceId": "0:0",

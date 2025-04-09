@@ -39,3 +39,10 @@ data class RecognitionMetrics(
     val timeFaceEmbedding: Long,
     val timeFaceSpoofDetection: Long
 )
+@Entity
+data class AttendanceRecord(
+    @Id var id: Long = 0,
+    var studentId: Long = 0,  // You can store the recognized face's personID
+    var date: String = "",    // Date string (e.g., "2025-04-08")
+    var timestamp: Long = 0   // When the face was scanned
+)

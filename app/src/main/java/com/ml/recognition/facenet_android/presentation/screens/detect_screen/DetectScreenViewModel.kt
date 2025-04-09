@@ -10,6 +10,11 @@ import android.graphics.Bitmap
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import com.ml.shubham0204.facenet_android.data.AttendanceRecord
+import com.ml.shubham0204.facenet_android.data.ObjectBoxStore
+import java.text.SimpleDateFormat
+import java.util.*
+
 
 // Define the data class for each recognition result.
 import com.ml.shubham0204.facenet_android.domain.ImageVectorUseCase.FaceRecognitionResult
@@ -39,5 +44,22 @@ class DetectScreenViewModel(
         }
     }
 
+    fun markAttendance(recognizedPersonId: Long) {
+        // Get the attendance box from ObjectBoxStore (using the "store" property)
+        val attendanceBox = ObjectBoxStore.store.boxFor(AttendanceRecord::class.java)
+
+        // Format the current date, for example "2025-04-08"
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+
+        // Create an attendance record
+        val attendanceRecord = AttendanceRecord(
+            studentId = recognizedPersonId,
+            date = today,
+            timestamp = System.currentTimeMillis()
+        )
+
+        // Save the record
+        attendanceBox.put(attendanceRecord)
+    }
     fun getNumPeople(): Long = personUseCase.getCount()
 }

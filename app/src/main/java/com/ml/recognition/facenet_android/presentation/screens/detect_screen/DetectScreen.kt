@@ -46,12 +46,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import com.ml.shubham0204.facenet_android.R
+import com.ml.shubham0204.facenet_android.data.AttendanceRecord
+import com.ml.shubham0204.facenet_android.data.ObjectBoxStore
 import com.ml.shubham0204.facenet_android.presentation.components.AppAlertDialog
 import com.ml.shubham0204.facenet_android.presentation.components.DelayedVisibility
 import com.ml.shubham0204.facenet_android.presentation.components.FaceDetectionOverlay
 import com.ml.shubham0204.facenet_android.presentation.components.createAlertDialog
 import com.ml.shubham0204.facenet_android.presentation.theme.FaceNetAndroidTheme
 import org.koin.androidx.compose.koinViewModel
+import java.util.Calendar
+import androidx.navigation.NavController
+import androidx.compose.material.icons.filled.List
 
 private val cameraPermissionStatus = mutableStateOf(false)
 private val cameraFacing = mutableIntStateOf(CameraSelector.LENS_FACING_BACK)
@@ -59,7 +64,7 @@ private lateinit var cameraPermissionLauncher: ManagedActivityResultLauncher<Str
 
 @kotlin.OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetectScreen(onOpenFaceListClick: (() -> Unit)) {
+fun DetectScreen(navController: NavController, onOpenFaceListClick: (() -> Unit)) {
     FaceNetAndroidTheme {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
@@ -93,14 +98,33 @@ fun DetectScreen(onOpenFaceListClick: (() -> Unit)) {
                                 contentDescription = "Switch Camera"
                             )
                         }
+                        IconButton(onClick = { navController.navigate("attendance") }) {
+                            Icon(imageVector = Icons.Default.List, contentDescription = "Attendance List")
+                        }
                     }
                 )
             }
         ) { innerPadding ->
-            Column(modifier = Modifier.padding(innerPadding)) { ScreenUI() }
+            Column(modifier = Modifier.padding(innerPadding)) { ScreenUI()
+                // Button to go to attendance
+                Button(
+                    onClick = { navController.navigate("attendance") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text("View Attendance List")
+                }
+            }
         }
     }
 }
+//@Composable
+//fun DetectScreen(navController: NavController) {
+//    // You can use navController.navigate("attendance") in a button/icon
+//    IconButton(onClick = { navController.navigate("attendance") }) {
+//        Icon(imageVector = Icons.Default.List, contentDescription = "Attendance")}
+//}
 
 @Composable
 private fun ScreenUI() {
@@ -137,6 +161,7 @@ private fun ScreenUI() {
                         color = Color.White,
                         textAlign = TextAlign.Center
                     )
+
                 }
 
                 Spacer(modifier = Modifier.weight(1f))

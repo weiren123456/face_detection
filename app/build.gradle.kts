@@ -21,7 +21,16 @@ android {
             useSupportLibrary = true
         }
     }
-
+    kotlinOptions {
+        // For Compose Material3 experimental APIs:
+        freeCompilerArgs += listOf(
+            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api"
+        )
+        // Keep your JVM target:
+        jvmTarget = "1.8"
+        // Don’t treat warnings as errors:
+        allWarningsAsErrors = false
+    }
     signingConfigs {
         create("release") {
             storeFile = file("../keystore.jks")
