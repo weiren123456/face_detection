@@ -7,34 +7,16 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.OptIn
 import androidx.camera.core.CameraSelector
-
 import androidx.camera.core.ExperimentalGetImage
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cameraswitch
 import androidx.compose.material.icons.filled.Face
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -45,24 +27,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
+import androidx.navigation.NavController
 import com.ml.shubham0204.facenet_android.R
-import com.ml.shubham0204.facenet_android.data.AttendanceRecord
-import com.ml.shubham0204.facenet_android.data.ObjectBoxStore
 import com.ml.shubham0204.facenet_android.presentation.components.AppAlertDialog
 import com.ml.shubham0204.facenet_android.presentation.components.DelayedVisibility
 import com.ml.shubham0204.facenet_android.presentation.components.FaceDetectionOverlay
 import com.ml.shubham0204.facenet_android.presentation.components.createAlertDialog
 import com.ml.shubham0204.facenet_android.presentation.theme.FaceNetAndroidTheme
 import org.koin.androidx.compose.koinViewModel
-import java.util.Calendar
-import androidx.navigation.NavController
-import androidx.compose.material.icons.filled.List
 
 private val cameraPermissionStatus = mutableStateOf(false)
 private val cameraFacing = mutableIntStateOf(CameraSelector.LENS_FACING_BACK)
 private lateinit var cameraPermissionLauncher: ManagedActivityResultLauncher<String, Boolean>
 
-@kotlin.OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetectScreen(navController: NavController, onOpenFaceListClick: (() -> Unit)) {
     FaceNetAndroidTheme {
@@ -79,24 +57,18 @@ fun DetectScreen(navController: NavController, onOpenFaceListClick: (() -> Unit)
                     },
                     actions = {
                         IconButton(onClick = onOpenFaceListClick) {
-                            Icon(
-                                imageVector = Icons.Default.Face,
-                                contentDescription = "Open Face List"
-                            )
+                            Icon(imageVector = Icons.Default.Face, contentDescription = "Open Face List")
                         }
                         IconButton(
                             onClick = {
-                                if (cameraFacing.intValue == CameraSelector.LENS_FACING_BACK) {
-                                    cameraFacing.intValue = CameraSelector.LENS_FACING_FRONT
-                                } else {
-                                    cameraFacing.intValue = CameraSelector.LENS_FACING_BACK
-                                }
+                                cameraFacing.intValue =
+                                    if (cameraFacing.intValue == CameraSelector.LENS_FACING_BACK)
+                                        CameraSelector.LENS_FACING_FRONT
+                                    else
+                                        CameraSelector.LENS_FACING_BACK
                             }
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Cameraswitch,
-                                contentDescription = "Switch Camera"
-                            )
+                            Icon(imageVector = Icons.Default.Cameraswitch, contentDescription = "Switch Camera")
                         }
                         IconButton(onClick = { navController.navigate("attendance") }) {
                             Icon(imageVector = Icons.Default.List, contentDescription = "Attendance List")
@@ -105,8 +77,8 @@ fun DetectScreen(navController: NavController, onOpenFaceListClick: (() -> Unit)
                 )
             }
         ) { innerPadding ->
-            Column(modifier = Modifier.padding(innerPadding)) { ScreenUI()
-                // Button to go to attendance
+            Column(modifier = Modifier.padding(innerPadding)) {
+                ScreenUI()
                 Button(
                     onClick = { navController.navigate("attendance") },
                     modifier = Modifier
@@ -119,30 +91,17 @@ fun DetectScreen(navController: NavController, onOpenFaceListClick: (() -> Unit)
         }
     }
 }
-//@Composable
-//fun DetectScreen(navController: NavController) {
-//    // You can use navController.navigate("attendance") in a button/icon
-//    IconButton(onClick = { navController.navigate("attendance") }) {
-//        Icon(imageVector = Icons.Default.List, contentDescription = "Attendance")}
-//}
 
 @Composable
 private fun ScreenUI() {
-    // Get your ViewModel
     val viewModel: DetectScreenViewModel = koinViewModel()
+    val markedName by viewModel.attendanceMarkedName
 
     Box {
-        // Show camera preview
         Camera(viewModel)
 
-        // Show recognized faces & metrics if there's at least 1 face in DB
         DelayedVisibility(viewModel.getNumPeople() > 0) {
-
-            // 1) Read the metrics state
             val metrics by remember { viewModel.faceDetectionMetricsState }
-
-            // 2) Read the face recognition results state (the one with match confidence)
-            //    Make sure you have faceRecognitionResultState in your ViewModel
             val results by remember { viewModel.faceRecognitionResultState }
 
             Column(modifier = Modifier.fillMaxWidth()) {
@@ -152,7 +111,6 @@ private fun ScreenUI() {
                     textAlign = TextAlign.Center
                 )
 
-                // NEW: Display the match confidence for each recognized face
                 results?.forEach { result ->
                     Text(
                         text = "Matched: ${result.personName}\n" +
@@ -161,12 +119,10 @@ private fun ScreenUI() {
                         color = Color.White,
                         textAlign = TextAlign.Center
                     )
-
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                // Show metrics if not null
                 metrics?.let {
                     Text(
                         text = "face detection: ${it.timeFaceDetection} ms" +
@@ -183,7 +139,19 @@ private fun ScreenUI() {
             }
         }
 
-        // If no faces in DB, show this text
+        DelayedVisibility(markedName != null) {
+            Text(
+                text = "✅ Attendance marked for $markedName",
+                color = Color.Green,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 16.dp)
+                    .background(Color.White, RoundedCornerShape(8.dp))
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+        }
+
         DelayedVisibility(viewModel.getNumPeople() == 0L) {
             Text(
                 text = "No images in database",
@@ -197,7 +165,6 @@ private fun ScreenUI() {
             )
         }
 
-        // Any alert dialogs
         AppAlertDialog()
     }
 }
@@ -208,17 +175,14 @@ private fun Camera(viewModel: DetectScreenViewModel) {
     val context = LocalContext.current
     cameraPermissionStatus.value =
         ActivityCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
-            PackageManager.PERMISSION_GRANTED
+                PackageManager.PERMISSION_GRANTED
     val cameraFacing by remember { cameraFacing }
     val lifecycleOwner = LocalLifecycleOwner.current
 
     cameraPermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-            if (it) {
-                cameraPermissionStatus.value = true
-            } else {
-                camaraPermissionDialog()
-            }
+            cameraPermissionStatus.value = it
+            if (!it) camaraPermissionDialog()
         }
 
     DelayedVisibility(cameraPermissionStatus.value) {
@@ -257,7 +221,6 @@ private fun camaraPermissionDialog() {
         onPositiveButtonClick = { cameraPermissionLauncher.launch(Manifest.permission.CAMERA) },
         onNegativeButtonClick = {
             // TODO: Handle deny camera permission action
-            //       close the app
         }
     )
 }

@@ -30,7 +30,9 @@ data class PersonRecord(
     var numImages: Long = 0,
 
     // time when the record was added
-    var addTime: Long = 0
+    var addTime: Long = 0,
+    var busPlate: String = ""
+
 )
 
 data class RecognitionMetrics(
@@ -42,7 +44,14 @@ data class RecognitionMetrics(
 @Entity
 data class AttendanceRecord(
     @Id var id: Long = 0,
-    var studentId: Long = 0,  // You can store the recognized face's personID
-    var date: String = "",    // Date string (e.g., "2025-04-08")
-    var timestamp: Long = 0   // When the face was scanned
+    var personName: String = "",    // ✅ add this
+    var date: String = "",          // ✅ keep this
+
+    var morningChecked: Boolean = false,     // ☀️ Whether morning attendance was marked
+    var afternoonChecked: Boolean = false,   // 🌙 Whether afternoon attendance was marked
+    var morningTimestamp: Long = 0L,         // ⏰ Optional: when morning was marked
+    var afternoonTimestamp: Long = 0L,       // ⏰ Optional: when afternoon was marked
+
+    var lastUpdated: Long = System.currentTimeMillis(), // 🕒 To sort latest attendance  // optional, but useful
+    @Index var busPlate: String = ""
 )

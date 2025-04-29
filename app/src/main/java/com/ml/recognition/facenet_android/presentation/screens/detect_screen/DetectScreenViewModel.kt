@@ -1,65 +1,96 @@
 package com.ml.shubham0204.facenet_android.presentation.screens.detect_screen
 
+import android.app.Application
+import android.graphics.Bitmap
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.ml.shubham0204.facenet_android.data.AttendanceRecord
+import com.ml.shubham0204.facenet_android.data.AttendanceRecord_
+import com.ml.shubham0204.facenet_android.data.ObjectBoxStore
 import com.ml.shubham0204.facenet_android.data.RecognitionMetrics
 import com.ml.shubham0204.facenet_android.domain.ImageVectorUseCase
 import com.ml.shubham0204.facenet_android.domain.PersonUseCase
-import org.koin.android.annotation.KoinViewModel
-import android.graphics.Bitmap
-import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import com.ml.shubham0204.facenet_android.data.AttendanceRecord
-import com.ml.shubham0204.facenet_android.data.ObjectBoxStore
+import org.koin.android.annotation.KoinViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
-
-// Define the data class for each recognition result.
-import com.ml.shubham0204.facenet_android.domain.ImageVectorUseCase.FaceRecognitionResult
-
-
 @KoinViewModel
 class DetectScreenViewModel(
-    val personUseCase: PersonUseCase,
-    val imageVectorUseCase: ImageVectorUseCase
-) : ViewModel() {
+    app: Application,
+    val personUseCase: PersonUseCase,            // public
+    val imageVectorUseCase: ImageVectorUseCase   // public
+) : AndroidViewModel(app) {
 
     val faceDetectionMetricsState = mutableStateOf<RecognitionMetrics?>(null)
+    val faceRecognitionResultState =
+        mutableStateOf<List<ImageVectorUseCase.FaceRecognitionResult>?>(null)
 
-    // NEW: State variable for face recognition results (including match confidence)
-    val faceRecognitionResultState = mutableStateOf<List<FaceRecognitionResult>?>(null)
+    val attendanceMarked = mutableStateOf(false)
+    val attendanceMarkedName = mutableStateOf<String?>(null)
 
-    // NEW: Function to update the recognition results.
-    fun updateRecognitionResults(results: List<FaceRecognitionResult>) {
-        faceRecognitionResultState.value = results
-    }
+    fun getNumPeople(): Long = personUseCase.getCount()
+
     fun recognizeFaceFromBitmap(bitmap: Bitmap) {
         viewModelScope.launch(Dispatchers.Default) {
-            val (metrics, recognitionResults) = imageVectorUseCase.getNearestPersonName(bitmap)
+            val (metrics, recognitionResults) =
+                imageVectorUseCase.getNearestPersonName(bitmap)
 
             faceDetectionMetricsState.value = metrics
             faceRecognitionResultState.value = recognitionResults
+
+            recognitionResults.firstOrNull()?.let { top ->
+                val conf = top.confidence ?: 0
+                if (conf > 70 && top.personName != "Not recognized") {
+                    markAttendance(top.personName)
+                }
+            }
         }
     }
 
-    fun markAttendance(recognizedPersonId: Long) {
-        // Get the attendance box from ObjectBoxStore (using the "store" property)
-        val attendanceBox = ObjectBoxStore.store.boxFor(AttendanceRecord::class.java)
+    fun markAttendance(recognizedPersonName: String) {
+        val box = ObjectBoxStore.store.boxFor(AttendanceRecord::class.java)
+        val today =
+            SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        val now = System.currentTimeMillis()
+        val session = getCurrentSession()
 
-        // Format the current date, for example "2025-04-08"
-        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        val existing = box.query(
+            AttendanceRecord_.personName.equal(recognizedPersonName)
+                .and(AttendanceRecord_.date.equal(today))
+        ).build().findFirst()
 
-        // Create an attendance record
-        val attendanceRecord = AttendanceRecord(
-            studentId = recognizedPersonId,
-            date = today,
-            timestamp = System.currentTimeMillis()
-        )
+        if (existing != null) {
+            if (session == "morning" && !existing.morningChecked) {
+                existing.morningChecked = true
+                existing.morningTimestamp = now
+            } else if (session == "afternoon" && !existing.afternoonChecked) {
+                existing.afternoonChecked = true
+                existing.afternoonTimestamp = now
+            }
+            existing.lastUpdated = now
+            box.put(existing)
+        } else {
+            val newRec = AttendanceRecord(
+                personName = recognizedPersonName,
+                date = today,
+                morningChecked = session == "morning",
+                afternoonChecked = session == "afternoon",
+                morningTimestamp = if (session == "morning") now else 0L,
+                afternoonTimestamp = if (session == "afternoon") now else 0L,
+                lastUpdated = now
+            )
+            box.put(newRec)
+        }
 
-        // Save the record
-        attendanceBox.put(attendanceRecord)
+        attendanceMarkedName.value = recognizedPersonName
+        attendanceMarked.value = true
     }
-    fun getNumPeople(): Long = personUseCase.getCount()
+
+    private fun getCurrentSession(): String {
+        val h = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        return if (h in 5..11) "morning" else "afternoon"
+    }
 }

@@ -44,7 +44,7 @@ import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddFaceScreen(onNavigateBack: (() -> Unit)) {
+fun AddFaceScreen(onNavigateBack: () -> Unit) {
     FaceNetAndroidTheme {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
@@ -75,14 +75,23 @@ fun AddFaceScreen(onNavigateBack: (() -> Unit)) {
 
 @Composable
 private fun ScreenUI(viewModel: AddFaceScreenViewModel) {
+    // image picker launcher
     val pickVisualMediaLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.PickMultipleVisualMedia()
         ) {
             viewModel.selectedImageURIs.value = it
         }
+
+    // now track both name & plate
     var personName by remember { viewModel.personNameState }
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
+    var busPlate   by remember { viewModel.busPlateState }
+
+    Column(modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 24.dp)
+    ) {
+        // Person name input
         TextField(
             modifier = Modifier.fillMaxWidth(),
             value = personName,
@@ -90,13 +99,27 @@ private fun ScreenUI(viewModel: AddFaceScreenViewModel) {
             label = { Text(text = "Enter the person's name") },
             singleLine = true
         )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Bus plate input
+        TextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = busPlate,
+            onValueChange = { busPlate = it },
+            label = { Text(text = "Enter bus plate") },
+            singleLine = true
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
+            // Only enable once both fields are non-empty
             Button(
-                enabled = viewModel.personNameState.value.isNotEmpty(),
+                enabled = personName.isNotEmpty() && busPlate.isNotEmpty(),
                 onClick = {
                     pickVisualMediaLauncher.launch(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
@@ -106,16 +129,21 @@ private fun ScreenUI(viewModel: AddFaceScreenViewModel) {
                 Icon(imageVector = Icons.Default.Photo, contentDescription = "Choose photos")
                 Text(text = "Choose photos")
             }
+
             DelayedVisibility(viewModel.selectedImageURIs.value.isNotEmpty()) {
-                Button(onClick = { viewModel.addImages() }) { Text(text = "Add to database") }
+                Button(onClick = { viewModel.addImages() }) {
+                    Text(text = "Add to database")
+                }
             }
         }
+
         DelayedVisibility(viewModel.selectedImageURIs.value.isNotEmpty()) {
             Text(
                 text = "${viewModel.selectedImageURIs.value.size} image(s) selected",
                 style = MaterialTheme.typography.labelSmall
             )
         }
+
         ImagesGrid(viewModel)
     }
 }
@@ -124,15 +152,21 @@ private fun ScreenUI(viewModel: AddFaceScreenViewModel) {
 private fun ImagesGrid(viewModel: AddFaceScreenViewModel) {
     val uris by remember { viewModel.selectedImageURIs }
     LazyVerticalGrid(columns = GridCells.Fixed(2)) {
-        items(uris) { AsyncImage(model = it, contentDescription = null) }
+        items(uris) { uri ->
+            AsyncImage(model = uri, contentDescription = null)
+        }
     }
 }
 
 @Composable
-private fun ImageReadProgressDialog(viewModel: AddFaceScreenViewModel, onNavigateBack: () -> Unit) {
-    val isProcessing by remember { viewModel.isProcessingImages }
-    val numImagesProcessed by remember { viewModel.numImagesProcessed }
-    val context = LocalContext.current
+private fun ImageReadProgressDialog(
+    viewModel: AddFaceScreenViewModel,
+    onNavigateBack: () -> Unit
+) {
+    val isProcessing        by remember { viewModel.isProcessingImages }
+    val numImagesProcessed  by remember { viewModel.numImagesProcessed }
+    val context             = LocalContext.current
+
     AppProgressDialog()
     if (isProcessing) {
         showProgressDialog()

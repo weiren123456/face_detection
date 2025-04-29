@@ -28,15 +28,12 @@ class MainActivity : ComponentActivity() {
                 exitTransition = { fadeOut() }
             ) {
                 composable("add-face") {
-                    AddFaceScreen {
-                        navHostController.navigateUp()
-                    }
+                    AddFaceScreen { navHostController.navigateUp() }
                 }
 
-                // 🔧 Modified to pass navController to DetectScreen
                 composable("detect") {
                     DetectScreen(
-                        navController = navHostController, // 🆕 pass for attendance navigation
+                        navController = navHostController,
                         onOpenFaceListClick = { navHostController.navigate("face-list") }
                     )
                 }
@@ -48,9 +45,11 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                // ✅ Make sure attendance is enabled
                 composable("attendance") {
-                    AttendanceScreen()
+                    // No ViewModel needed here any more:
+                    AttendanceScreen(
+                        onNavigateBack = { navHostController.navigateUp() }
+                    )
                 }
             }
         }

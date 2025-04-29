@@ -26,4 +26,8 @@ class PersonDB {
     @OptIn(ExperimentalCoroutinesApi::class)
     fun getAll(): Flow<MutableList<PersonRecord>> =
         personBox.query(PersonRecord_.personID.notNull()).build().flow().flowOn(Dispatchers.IO)
+
+    fun findByBusPlate(plate: String): PersonRecord? =
+        personBox.query(PersonRecord_.busPlate.equal(plate)).build().findFirst()
+
 }
